@@ -1,5 +1,7 @@
 import { getSupabase } from "@/lib/supabase"
 
+export type PaymentStatus = "trial" | "paid" | "renewal_due" | "expired"
+
 export interface OnboardingStatus {
     hasSeenCelebration: boolean
     currentPhase: number
@@ -16,6 +18,8 @@ export interface User {
     lastName: string
     isAdmin: boolean
     isActive: boolean
+    paymentStatus: PaymentStatus
+    renewalDate: string | null
     onboardingStatus: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -31,6 +35,8 @@ type UserRow = {
     last_name: string
     is_admin: boolean
     is_active: boolean
+    payment_status: PaymentStatus
+    renewal_date: string | null
     onboarding_status: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -39,7 +45,7 @@ type UserRow = {
 }
 
 const SELECT_COLUMNS =
-    "id, email, password, first_name, last_name, is_admin, is_active, onboarding_status, connection, awareness, stabilization, created_at"
+    "id, email, password, first_name, last_name, is_admin, is_active, payment_status, renewal_date, onboarding_status, connection, awareness, stabilization, created_at"
 
 function toUser(row: UserRow): User {
     return {
@@ -50,6 +56,8 @@ function toUser(row: UserRow): User {
         lastName: row.last_name,
         isAdmin: row.is_admin,
         isActive: row.is_active,
+        paymentStatus: row.payment_status,
+        renewalDate: row.renewal_date,
         onboardingStatus: row.onboarding_status,
         connection: row.connection,
         awareness: row.awareness,
@@ -89,6 +97,8 @@ export interface UserSummary {
     lastName: string
     isAdmin: boolean
     isActive: boolean
+    paymentStatus: PaymentStatus
+    renewalDate: string | null
     onboardingStatus: OnboardingStatus
     createdAt: string
 }
@@ -102,7 +112,7 @@ export async function listUsers(): Promise<UserSummary[]> {
     const { data, error } = await supabase
         .from("users")
         .select(
-            "id, email, first_name, last_name, is_admin, is_active, onboarding_status, created_at"
+            "id, email, first_name, last_name, is_admin, is_active, payment_status, renewal_date, onboarding_status, created_at"
         )
         .order("created_at", { ascending: false })
 
@@ -115,6 +125,8 @@ export async function listUsers(): Promise<UserSummary[]> {
         lastName: row.last_name,
         isAdmin: row.is_admin,
         isActive: row.is_active,
+        paymentStatus: row.payment_status,
+        renewalDate: row.renewal_date,
         onboardingStatus: row.onboarding_status,
         createdAt: row.created_at,
     }))
@@ -134,6 +146,30 @@ export async function setUserActive(
     const { data, error } = await supabase
         .from("users")
         .update({ is_active: isActive })
+        .eq("id", userId)
+        .select(SELECT_COLUMNS)
+        .maybeSingle()
+
+    if (error) throw error
+    return data ? toUser(data as unknown as UserRow) : null
+}
+
+/**
+ * Admin-only: set a user's payment status and optional renewal date.
+ * No payment processor is wired in, so this is a plain manual field.
+ */
+export async function setUserPayment(
+    userId: string,
+    input: { paymentStatus?: PaymentStatus; renewalDate?: string | null }
+): Promise<User | null> {
+    const supabase = getSupabase()
+    const payload: Record<string, any> = {}
+    if (input.paymentStatus !== undefined) payload.payment_status = input.paymentStatus
+    if (input.renewalDate !== undefined) payload.renewal_date = input.renewalDate
+
+    const { data, error } = await supabase
+        .from("users")
+        .update(payload)
         .eq("id", userId)
         .select(SELECT_COLUMNS)
         .maybeSingle()

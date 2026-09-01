@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
-import { findUserById, setUserActive } from "@/lib/db/users"
+import {
+    findUserById,
+    setUserActive,
+    setUserPayment,
+    type PaymentStatus,
+} from "@/lib/db/users"
 
 const JWT_SECRET = process.env.JWT_SECRET || "peace-driven-default-secret-key"
+
+const PAYMENT_STATUSES: PaymentStatus[] = ["trial", "paid", "renewal_due", "expired"]
 
 async function requireAdmin() {
     const cookieStore = await cookies()
@@ -32,30 +39,61 @@ export async function PATCH(
         }
 
         const { id } = await params
-        const { isActive } = await req.json()
-
-        if (typeof isActive !== "boolean") {
-            return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 })
-        }
-
-        if (id === admin.id) {
-            return NextResponse.json(
-                { error: "You can't pause your own account" },
-                { status: 400 }
-            )
-        }
+        const body = await req.json()
+        const { isActive, paymentStatus, renewalDate } = body
 
         const target = await findUserById(id)
         if (!target) {
             return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        const updated = await setUserActive(id, isActive)
+        if (isActive !== undefined) {
+            if (typeof isActive !== "boolean") {
+                return NextResponse.json(
+                    { error: "isActive must be a boolean" },
+                    { status: 400 }
+                )
+            }
+            if (id === admin.id) {
+                return NextResponse.json(
+                    { error: "You can't pause your own account" },
+                    { status: 400 }
+                )
+            }
+            await setUserActive(id, isActive)
+        }
+
+        if (paymentStatus !== undefined || renewalDate !== undefined) {
+            if (
+                paymentStatus !== undefined &&
+                !PAYMENT_STATUSES.includes(paymentStatus)
+            ) {
+                return NextResponse.json(
+                    { error: "Invalid payment status" },
+                    { status: 400 }
+                )
+            }
+            if (
+                renewalDate !== undefined &&
+                renewalDate !== null &&
+                typeof renewalDate !== "string"
+            ) {
+                return NextResponse.json(
+                    { error: "renewalDate must be a date string or null" },
+                    { status: 400 }
+                )
+            }
+            await setUserPayment(id, { paymentStatus, renewalDate })
+        }
+
+        const updated = await findUserById(id)
 
         return NextResponse.json({
             user: {
                 id: updated?.id,
                 isActive: updated?.isActive,
+                paymentStatus: updated?.paymentStatus,
+                renewalDate: updated?.renewalDate,
             },
         })
     } catch (error) {
