@@ -110,3 +110,32 @@
     @apply font-sans;
     }
 }
+
+/* Traveling glow bead on the "Your Journey" timeline connector (step 1 -> 4), marketing page only. */
+@keyframes journey-travel {
+    0% {
+        top: 0%;
+        opacity: 0;
+    }
+    8% {
+        opacity: 1;
+    }
+    92% {
+        opacity: 1;
+    }
+    100% {
+        top: 100%;
+        opacity: 0;
+    }
+}
+
+.journey-travel {
+    animation: journey-travel 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .journey-travel {
+        animation: none;
+        opacity: 0.6;
+    }
+}

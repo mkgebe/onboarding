@@ -193,7 +193,10 @@ export default function Page() {
                     </div>
 
                     <div className="relative max-w-xl mx-auto">
-                        <div className="absolute left-5 top-2 bottom-2 w-px bg-gradient-to-b from-primary/40 via-primary/15 to-transparent" />
+                        <div className="absolute left-5 top-2 bottom-2 w-px">
+                            <div className="absolute inset-0 bg-gradient-to-b from-primary/40 via-primary/15 to-transparent" />
+                            <div className="journey-travel absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_10px_3px_var(--primary)]" />
+                        </div>
                         <div className="space-y-9">
                             {phases.map((item, i) => (
                                 <div key={i} className="relative flex items-start gap-5">
