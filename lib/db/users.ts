@@ -15,6 +15,7 @@ export interface User {
     firstName: string
     lastName: string
     isAdmin: boolean
+    isActive: boolean
     onboardingStatus: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -29,6 +30,7 @@ type UserRow = {
     first_name: string
     last_name: string
     is_admin: boolean
+    is_active: boolean
     onboarding_status: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -37,7 +39,7 @@ type UserRow = {
 }
 
 const SELECT_COLUMNS =
-    "id, email, password, first_name, last_name, is_admin, onboarding_status, connection, awareness, stabilization, created_at"
+    "id, email, password, first_name, last_name, is_admin, is_active, onboarding_status, connection, awareness, stabilization, created_at"
 
 function toUser(row: UserRow): User {
     return {
@@ -47,6 +49,7 @@ function toUser(row: UserRow): User {
         firstName: row.first_name,
         lastName: row.last_name,
         isAdmin: row.is_admin,
+        isActive: row.is_active,
         onboardingStatus: row.onboarding_status,
         connection: row.connection,
         awareness: row.awareness,
@@ -84,6 +87,8 @@ export interface UserSummary {
     email: string
     firstName: string
     lastName: string
+    isAdmin: boolean
+    isActive: boolean
     onboardingStatus: OnboardingStatus
     createdAt: string
 }
@@ -96,7 +101,9 @@ export async function listUsers(): Promise<UserSummary[]> {
     const supabase = getSupabase()
     const { data, error } = await supabase
         .from("users")
-        .select("id, email, first_name, last_name, onboarding_status, created_at")
+        .select(
+            "id, email, first_name, last_name, is_admin, is_active, onboarding_status, created_at"
+        )
         .order("created_at", { ascending: false })
 
     if (error) throw error
@@ -106,9 +113,33 @@ export async function listUsers(): Promise<UserSummary[]> {
         email: row.email,
         firstName: row.first_name,
         lastName: row.last_name,
+        isAdmin: row.is_admin,
+        isActive: row.is_active,
         onboardingStatus: row.onboarding_status,
         createdAt: row.created_at,
     }))
+}
+
+/**
+ * Admin-only: pause or reactivate a user's account. Paused users are
+ * blocked at login, and lose access on their next request anywhere the
+ * app re-reads the user row per-request (dashboard, onboarding, admin,
+ * onboarding APIs).
+ */
+export async function setUserActive(
+    userId: string,
+    isActive: boolean
+): Promise<User | null> {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+        .from("users")
+        .update({ is_active: isActive })
+        .eq("id", userId)
+        .select(SELECT_COLUMNS)
+        .maybeSingle()
+
+    if (error) throw error
+    return data ? toUser(data as unknown as UserRow) : null
 }
 
 export async function createUser(input: {

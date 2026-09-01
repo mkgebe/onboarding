@@ -1,4 +1,5 @@
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { jwtVerify } from "jose"
 import { findUserById } from "@/lib/db/users"
 import { OnboardingSidebar } from "@/components/onboarding-sidebar"
@@ -21,10 +22,14 @@ export default async function OnboardingLayout({
       const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET))
       const userId = (payload as any).userId
       const user = await findUserById(userId)
+      if (user && !user.isActive) {
+        redirect("/api/auth/logout")
+      }
       if (user) {
         status = user.onboardingStatus
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error
       console.error("Layout progress fetch error:", error)
     }
   }

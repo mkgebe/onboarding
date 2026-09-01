@@ -29,6 +29,13 @@ export async function GET() {
             )
         }
 
+        if (!user.isActive) {
+            return NextResponse.json(
+                { error: "This account has been paused." },
+                { status: 403 }
+            )
+        }
+
         return NextResponse.json({
             user: {
                 firstName: user.firstName,

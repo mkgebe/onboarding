@@ -27,6 +27,9 @@ export async function GET() {
     const user = await findUserById(userId)
 
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
+    if (!user.isActive) {
+      return NextResponse.json({ error: "This account has been paused." }, { status: 403 })
+    }
 
     return NextResponse.json(user)
   } catch (error) {
@@ -39,6 +42,12 @@ export async function PATCH(req: Request) {
   try {
     const userId = await getUserId()
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const viewer = await findUserById(userId)
+    if (!viewer) return NextResponse.json({ error: "User not found" }, { status: 404 })
+    if (!viewer.isActive) {
+      return NextResponse.json({ error: "This account has been paused." }, { status: 403 })
+    }
 
     const { currentPhase, currentStep, isCompleted, data } = await req.json()
 

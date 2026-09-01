@@ -24,6 +24,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
         }
 
+        if (!user.isActive) {
+            return NextResponse.json(
+                { error: "This account has been paused. Contact support." },
+                { status: 403 }
+            )
+        }
+
         const token = await new SignJWT({ userId: user.id, email: user.email })
             .setProtectedHeader({ alg: "HS256" })
             .setIssuedAt()

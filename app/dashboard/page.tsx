@@ -35,6 +35,10 @@ export default async function DashboardPage() {
 
         const user = await findUserById(userId)
 
+        if (user && !user.isActive) {
+            redirect("/api/auth/logout")
+        }
+
         if (user && !user.onboardingStatus?.hasSeenCelebration) {
             redirect("/success")
         }
