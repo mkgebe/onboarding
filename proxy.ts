@@ -14,7 +14,8 @@ export async function proxyHandler(request: NextRequest) {
 
     // 1. Identify public vs protected paths
     const isPublicPath = pathname === "/login" || pathname === "/signup"
-    const isProtectedPath = pathname.startsWith("/dashboard")
+    const isProtectedPath =
+        pathname.startsWith("/dashboard") || pathname.startsWith("/admin")
 
     // 2. Validate token if present
     let isValid = false
@@ -45,5 +46,5 @@ export async function proxyHandler(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/login", "/signup"],
+    matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/signup"],
 }

@@ -14,6 +14,7 @@ export interface User {
     password?: string | null
     firstName: string
     lastName: string
+    isAdmin: boolean
     onboardingStatus: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -27,6 +28,7 @@ type UserRow = {
     password: string | null
     first_name: string
     last_name: string
+    is_admin: boolean
     onboarding_status: OnboardingStatus
     connection: Record<string, any>
     awareness: Record<string, any>
@@ -35,7 +37,7 @@ type UserRow = {
 }
 
 const SELECT_COLUMNS =
-    "id, email, password, first_name, last_name, onboarding_status, connection, awareness, stabilization, created_at"
+    "id, email, password, first_name, last_name, is_admin, onboarding_status, connection, awareness, stabilization, created_at"
 
 function toUser(row: UserRow): User {
     return {
@@ -44,6 +46,7 @@ function toUser(row: UserRow): User {
         password: row.password,
         firstName: row.first_name,
         lastName: row.last_name,
+        isAdmin: row.is_admin,
         onboardingStatus: row.onboarding_status,
         connection: row.connection,
         awareness: row.awareness,
@@ -74,6 +77,38 @@ export async function findUserById(id: string): Promise<User | null> {
 
     if (error) throw error
     return data ? toUser(data as unknown as UserRow) : null
+}
+
+export interface UserSummary {
+    id: string
+    email: string
+    firstName: string
+    lastName: string
+    onboardingStatus: OnboardingStatus
+    createdAt: string
+}
+
+/**
+ * Roster for the /admin portal: everyone, newest first, without the
+ * password hash or the bulky connection/awareness/stabilization blobs.
+ */
+export async function listUsers(): Promise<UserSummary[]> {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+        .from("users")
+        .select("id, email, first_name, last_name, onboarding_status, created_at")
+        .order("created_at", { ascending: false })
+
+    if (error) throw error
+
+    return (data ?? []).map((row: any) => ({
+        id: row.id,
+        email: row.email,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        onboardingStatus: row.onboarding_status,
+        createdAt: row.created_at,
+    }))
 }
 
 export async function createUser(input: {
