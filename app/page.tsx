@@ -67,12 +67,12 @@ export default function Page() {
             {/* Navigation */}
             <nav className="relative z-20 flex items-center justify-between px-4 md:px-8 py-6 max-w-6xl mx-auto">
                 <div className="flex items-center gap-2.5 md:gap-3">
-                    <div className="relative w-8 h-8 md:w-9 md:h-9 overflow-hidden rounded-full ring-1 ring-primary/20">
+                    <div className="relative w-9 h-9 md:w-10 md:h-10">
                         <Image
                             src="/assets/logo.png"
-                            alt="Minesha Logo"
+                            alt="Peace-Driven Leader Logo"
                             fill
-                            className="object-cover"
+                            className="object-contain"
                         />
                     </div>
                     <span className="font-serif text-lg md:text-xl font-medium tracking-tight text-foreground whitespace-nowrap">
