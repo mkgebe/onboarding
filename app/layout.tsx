@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google"
+import { Geist, Geist_Mono, Inter, Fraunces } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,6 +9,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const fontMono = Geist_Mono({
     subsets: ["latin"],
     variable: "--font-mono",
+})
+
+// Editorial display serif used for marketing headlines (see globals.css
+// `--font-serif`), kept separate from the app-wide Inter/Geist Mono pairing.
+const fraunces = Fraunces({
+    subsets: ["latin"],
+    style: ["normal", "italic"],
+    variable: "--font-display",
 })
 
 import { Toaster } from "sonner"
@@ -27,7 +35,8 @@ export default function RootLayout({
                 "antialiased",
                 fontMono.variable,
                 "font-sans",
-                inter.variable
+                inter.variable,
+                fraunces.variable
             )}
         >
             <body>
