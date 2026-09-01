@@ -1,7 +1,6 @@
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { findUserById } from "@/lib/db/users"
 import { OnboardingSidebar } from "@/components/onboarding-sidebar"
 import { Progress } from "@/components/ui/progress"
 
@@ -21,10 +20,9 @@ export default async function OnboardingLayout({
     try {
       const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET))
       const userId = (payload as any).userId
-      await connectDB()
-      const user = await User.findById(userId).select("onboardingStatus")
+      const user = await findUserById(userId)
       if (user) {
-        status = JSON.parse(JSON.stringify(user.onboardingStatus))
+        status = user.onboardingStatus
       }
     } catch (error) {
       console.error("Layout progress fetch error:", error)

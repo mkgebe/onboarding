@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { jwtVerify } from "jose"
 import { cookies } from "next/headers"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { findUserById } from "@/lib/db/users"
 
 const JWT_SECRET = process.env.JWT_SECRET || "peace-driven-default-secret-key"
 
@@ -21,10 +20,7 @@ export async function GET() {
         )
         const userId = (payload as any).userId
 
-        await connectDB()
-        const user = await User.findById(userId).select(
-            "firstName lastName email"
-        )
+        const user = await findUserById(userId)
 
         if (!user) {
             return NextResponse.json(

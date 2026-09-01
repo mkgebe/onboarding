@@ -3,8 +3,7 @@ import { cn } from "@/lib/utils"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 import Link from "next/link"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { findUserById } from "@/lib/db/users"
 import { ArrowRight, Sparkles, CheckCircle2, Circle } from "lucide-react"
 import {
     Card,
@@ -34,8 +33,7 @@ export default async function DashboardPage() {
         )
         const userId = (payload as any).userId
 
-        await connectDB()
-        const user = await User.findById(userId)
+        const user = await findUserById(userId)
 
         if (user && !user.onboardingStatus?.hasSeenCelebration) {
             redirect("/success")

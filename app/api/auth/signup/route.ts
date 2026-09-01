@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { createUser, findUserByEmail } from "@/lib/db/users"
 
 export async function POST(req: Request) {
     try {
@@ -11,9 +10,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 })
         }
 
-        await connectDB()
-
-        const existingUser = await User.findOne({ email })
+        const existingUser = await findUserByEmail(email)
         if (existingUser) {
             return NextResponse.json({ error: "User exists" }, { status: 400 })
         }
@@ -25,14 +22,12 @@ export async function POST(req: Request) {
         const firstName = nameParts[0]
         const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
 
-        const newUser = new User({
+        await createUser({
             firstName,
             lastName,
             email,
             password: hashedPassword,
         })
-
-        await newUser.save()
 
         return NextResponse.json({ message: "User created" }, { status: 201 })
     } catch (error: any) {

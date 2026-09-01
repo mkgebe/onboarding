@@ -2,8 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { SignJWT } from "jose"
 import { cookies } from "next/headers"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { findUserByEmail } from "@/lib/db/users"
 
 const JWT_SECRET = process.env.JWT_SECRET || "peace-driven-default-secret-key"
 
@@ -15,9 +14,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 })
         }
 
-        await connectDB()
-
-        const user = await User.findOne({ email })
+        const user = await findUserByEmail(email)
         if (!user || !user.password) {
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
         }
@@ -27,7 +24,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
         }
 
-        const token = await new SignJWT({ userId: user._id.toString(), email: user.email })
+        const token = await new SignJWT({ userId: user.id, email: user.email })
             .setProtectedHeader({ alg: "HS256" })
             .setIssuedAt()
             .setExpirationTime("7d")
@@ -42,13 +39,13 @@ export async function POST(req: Request) {
             path: "/",
         })
 
-        return NextResponse.json({ 
-            user: { 
-                id: user._id, 
-                email: user.email, 
-                firstName: user.firstName, 
-                lastName: user.lastName 
-            } 
+        return NextResponse.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
         })
     } catch (error: any) {
         console.error("Login error:", error)

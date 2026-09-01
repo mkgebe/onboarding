@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { updateUserFields } from "@/lib/db/users"
 
 const JWT_SECRET = process.env.JWT_SECRET || "peace-driven-default-secret-key"
 
@@ -18,8 +17,7 @@ export async function POST() {
         const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET))
         const userId = (payload as any).userId
 
-        await connectDB()
-        await User.findByIdAndUpdate(userId, {
+        await updateUserFields(userId, {
             "onboardingStatus.hasSeenCelebration": true
         })
 

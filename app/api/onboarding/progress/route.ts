@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { findUserById, updateUserFields } from "@/lib/db/users"
 
 const JWT_SECRET = process.env.JWT_SECRET || "peace-driven-default-secret-key"
 
@@ -25,9 +24,8 @@ export async function GET() {
     const userId = await getUserId()
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    await connectDB()
-    const user = await User.findById(userId)
-    
+    const user = await findUserById(userId)
+
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
 
     return NextResponse.json(user)
@@ -44,11 +42,10 @@ export async function PATCH(req: Request) {
 
     const { currentPhase, currentStep, isCompleted, data } = await req.json()
 
-    await connectDB()
-    const update: any = {
-      "onboardingStatus.updatedAt": new Date()
+    const update: Record<string, unknown> = {
+      "onboardingStatus.updatedAt": new Date().toISOString()
     }
-    
+
     if (currentPhase !== undefined) {
       update["onboardingStatus.currentPhase"] = Math.max(1, Math.min(4, currentPhase))
     }
@@ -62,8 +59,8 @@ export async function PATCH(req: Request) {
       })
     }
 
-    const user = await User.findByIdAndUpdate(userId, update, { returnDocument: "after" })
-    
+    const user = await updateUserFields(userId, update)
+
     return NextResponse.json(user?.onboardingStatus)
   } catch (error) {
     console.error("Progress update error:", error)
